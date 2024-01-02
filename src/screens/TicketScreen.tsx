@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/no-unstable-nested-components */
 /* eslint-disable react-native/no-inline-styles */
+
 import {
   View,
   Text,
@@ -12,6 +13,12 @@ import {
   Button,
   TouchableWithoutFeedback,
   Keyboard,
+  TouchableHighlight,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+  ScrollView,
+
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -19,7 +26,12 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import ModalDropdown from 'react-native-modal-dropdown';
 import Feather from 'react-native-vector-icons/Feather';
 import DocumentPicker from 'react-native-document-picker';
-
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+interface Attachment {
+  name: string;
+  type: string;
+  // Add more properties if needed
+}
 const TicketScreen = ({ navigation }: any) => {
   const [users] = useState([
     {
@@ -72,6 +84,7 @@ const TicketScreen = ({ navigation }: any) => {
       description: 'Closed',
       descDate: 'August 2023',
     },
+
   ]);
 
   const [filteredTickets, setFilteredTickets] = useState([...users]);
@@ -98,25 +111,56 @@ const TicketScreen = ({ navigation }: any) => {
     'Olivia Chen',
     'All Users',
   ];
-  const tickets = ['Active', 'Closed', 'All Tickets'];
+  const tickets = ['Active', 'Closed', 'All Tickets',];
   const [isDropdownOpen1, setIsDropdownOpen1] = useState(false);
   const [isDropdownOpen2, setIsDropdownOpen2] = useState(false);
   const [isDropdownOpen3, setIsDropdownOpen3] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [attachment, setAttachment] = useState(null);
+  const [attachment, setAttachment] = useState<Attachment | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState('');
 
 
+  const handleDropdownItemPress = (value: React.SetStateAction<string>) => {
+    setSelectedProduct(value);
+    setSelectedFilter(value); // Update the selected filter
+  };
 
+  const handleDropdownItemPressUsers = (value: React.SetStateAction<string>) => {
+    setSelectedUsers(value);
+    setSelectedFilter(value); // Update the selected filter
+  };
+
+  const handleDropdownItemPressTickets = (value: React.SetStateAction<string>) => {
+    setSelectedTickets(value);
+    setSelectedFilter(value); // Update the selected filter
+  };
+
+
+  const containerStyle = {
+    borderColor: isDropdownOpen1 ? 'gray' : 'transparent',
+    borderBottomColor: 'white',
+    borderWidth: 1,
+    width: '45%',
+    // Apply additional styles based on the selected filter
+    backgroundColor: selectedFilter === 'YourFilterValue' ? 'red' : 'white',
+    // Add more dynamic styles based on the selected filter as needed
+  };
 
 
   const pickAttachment = async () => {
     try {
-      const result = await DocumentPicker.pick({
+      const results = await DocumentPicker.pick({
         type: [DocumentPicker.types.allFiles],
       });
+      const result = results[0];
 
+      console.log('result', result)
       // Update the state with the selected file information
-      setAttachment(result);
+      setAttachment({
+        name: result!.name!,
+        type: result!.type!,
+        // Add more properties if needed
+      });
     } catch (err) {
       if (DocumentPicker.isCancel(err)) {
         // Handle cancel event
@@ -124,6 +168,11 @@ const TicketScreen = ({ navigation }: any) => {
         // Handle other errors
       }
     }
+  };
+
+  const removeAttachment = () => {
+    // Set the attachment state to null
+    setAttachment(null);
   };
 
   const handleNewPress = () => {
@@ -204,7 +253,9 @@ const TicketScreen = ({ navigation }: any) => {
     return <View style={styles.lineSeperator} />;
   };
 
+
   return (
+
     <View style={styles.mainContainer}>
       <View style={styles.container}>
         <View style={styles.tool}>
@@ -254,19 +305,22 @@ const TicketScreen = ({ navigation }: any) => {
                 defaultValue="All Products"
                 textStyle={{ fontSize: 16, color: 'black' }}
                 style={styles.allproductsDropdown}
+
                 dropdownStyle={{
                   width: 348,
-                  borderColor: '#ccc',
+                  borderColor: 'white',
                   marginRight: 100,
                   borderTopColor: 'white',
-                  // height: 'auto'
+
+                  height: 'auto'
                 }}
-                dropdownTextStyle={{
-                  fontSize: 14,
-                  marginVertical: -5,
-                  marginLeft: 6,
-                  color: 'black',
-                }}
+                // dropdownTextStyle={{
+                //   fontSize: 14,
+                //   marginVertical: -5,
+                //   marginLeft: 6,
+                //   color: 'black',
+
+                // }}
                 onSelect={(_index: any, value: React.SetStateAction<string>) =>
                   setSelectedProduct(value)
                 }
@@ -274,7 +328,18 @@ const TicketScreen = ({ navigation }: any) => {
                 onDropdownWillHide={() => handleDropdownToggle1(false)}
                 renderSeparator={() => (
                   <View style={{ backgroundColor: 'white' }} />
-                )}>
+                )}
+                renderRow={(rowData, rowID, highlighted) => (
+                  <TouchableOpacity
+                    key={rowID}
+                    onPress={() => handleDropdownItemPress(rowData)}
+                  >
+                    <Text style={{ fontSize: 14, color: 'black', marginLeft: 13, }}>
+                      {rowData}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              >
                 <View style={styles.allproductsView}>
                   <Text style={styles.allproductsDropdownText}>
                     {selectedProduct}
@@ -309,18 +374,18 @@ const TicketScreen = ({ navigation }: any) => {
                 }}
                 dropdownStyle={{
                   width: 348,
-                  borderColor: '#ccc',
+                  borderColor: 'white',
                   marginTop: 5,
                   marginRight: 100,
                   borderTopColor: 'white',
-                  // height: 'auto'
+                  height: 'auto'
                 }}
-                dropdownTextStyle={{
-                  fontSize: 14,
-                  marginVertical: -5,
-                  marginLeft: 6,
-                  color: 'black',
-                }}
+                // dropdownTextStyle={{
+                //   fontSize: 14,
+                //   marginVertical: -5,
+                //   marginLeft: 6,
+                //   color: 'black',
+                // }}
                 onSelect={(_index: any, value: React.SetStateAction<string>) =>
                   setSelectedUsers(value)
                 }
@@ -329,7 +394,18 @@ const TicketScreen = ({ navigation }: any) => {
                 // Use ItemSeparatorComponent to customize the separator between items
                 renderSeparator={() => (
                   <View style={{ backgroundColor: 'white' }} />
-                )}>
+                )}
+                renderRow={(rowData, rowID, highlighted) => (
+                  <TouchableOpacity
+                    key={rowID}
+                    onPress={() => handleDropdownItemPressUsers(rowData)}
+                  >
+                    <Text style={{ fontSize: 14, color: 'black', marginLeft: 13 }}>
+                      {rowData}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              >
                 <View
                   style={{
                     flexDirection: 'row',
@@ -369,20 +445,20 @@ const TicketScreen = ({ navigation }: any) => {
                 }}
                 dropdownStyle={{
                   width: 348,
-                  borderColor: '#ccc',
-                  backgroundColor: 'green',
+                  borderColor: 'white',
+                  backgroundColor: 'white',
 
                   marginTop: 5,
                   // marginRight: 100,
                   borderTopColor: 'white',
                   height: 'auto',
                 }}
-                dropdownTextStyle={{
-                  fontSize: 14,
-                  marginVertical: -5,
-                  // marginLeft: 5,
-                  color: 'black',
-                }}
+                // dropdownTextStyle={{
+                //   fontSize: 14,
+                //   marginVertical: -5,
+                //   marginLeft: 8,
+                //   color: 'black',
+                // }}
                 onSelect={(_index: any, value: React.SetStateAction<string>) =>
                   setSelectedTickets(value)
                 }
@@ -390,7 +466,18 @@ const TicketScreen = ({ navigation }: any) => {
                 onDropdownWillHide={() => handleDropdownToggle3(false)}
                 renderSeparator={() => (
                   <View style={{ backgroundColor: 'white' }} />
-                )}>
+                )}
+                renderRow={(rowData, rowID, highlighted) => (
+                  <TouchableOpacity
+                    key={rowID}
+                    onPress={() => handleDropdownItemPressTickets(rowData)}
+                  >
+                    <Text style={{ fontSize: 14, color: 'black', marginLeft: 13 }}>
+                      {rowData}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              >
                 <View
                   style={{
                     flexDirection: 'row',
@@ -443,157 +530,219 @@ const TicketScreen = ({ navigation }: any) => {
             </View>
           ) : null}
         </View>
+        <ScrollView>
+          <View>
+            <FlatList
+              data={filteredTickets}
+              renderItem={renderUserItem}
+              keyExtractor={item => item.name}
+              ItemSeparatorComponent={LineSeparator}
+            />
+          </View>
+        </ScrollView>
 
-        <View>
-          <FlatList
-            data={filteredTickets}
-            renderItem={renderUserItem}
-            keyExtractor={item => item.name}
-            ItemSeparatorComponent={LineSeparator}
-          />
-        </View>
       </View>
+
       {/* Modal */}
+
+
+
+
+
+
       <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => {
-          setModalVisible(!modalVisible);
-        }}>
+        onRequestClose={() => setModalVisible(!modalVisible)}
+      >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.centeredView}>
-            <View style={styles.modalView}>
-              <View
+          {/* <ScrollView> */}
+          {/* <View style={styles.centeredView}> */}
+          <View style={styles.modalView}>
+            <View
+              style={{
+                borderColor: 'grey',
+                borderWidth: 1,
+                borderRadius: 4,
+                width: '20%',
+                height: '1%',
+                marginTop: '2%',
+                backgroundColor: 'grey',
+                alignContent: 'flex-end',
+                alignSelf: 'center'
+              }}
+            />
+
+            <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
+              <Text style={{ fontSize: 18, marginLeft: '5%' }}>Cancel</Text>
+            </TouchableOpacity>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                marginTop: '5%'
+              }}>
+              <Text style={{ marginLeft: '5%', fontSize: 18 }}>
+                New Ticket
+              </Text>
+
+              <ModalDropdown
+                options={products}
+                defaultValue="All Products"
                 style={{
-                  borderWidth: 4,
-                  width: 70,
-                  borderRadius: 10,
-                  borderColor: 'grey',
+                  borderColor: isDropdownOpen1 ? 'gray' : 'transparent',
+                  borderBottomWidth: 0.5,
+                  borderLeftWidth: 0.5,
+                  borderRightWidth: 0.5,
+                  borderTopWidth: 0.5,
+                  width: '40.9%',
+                  marginRight: '5%'
                 }}
-              />
-              <View
-                style={{
-                  alignSelf: 'flex-start',
-                  marginLeft: -9,
-                  marginBottom: 20,
-                }}>
-                <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
-                  <Text style={{ fontSize: 18, marginLeft: 8 }}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  marginBottom: 10,
-                }}>
-                <Text style={{ alignSelf: 'flex-start', fontSize: 18 }}>
-                  New Ticket
-                </Text>
-                <ModalDropdown
-                  options={products}
-                  defaultValue="All Products"
-                  textStyle={{ fontSize: 16, color: 'black' }}
-                  style={{
-                    borderColor: isDropdownOpen1 ? 'gray' : 'transparent',
-                    borderBottomColor: 'white',
-                    borderWidth: 1,
-                    height: 40, // Set a fixed height for the dropdown container
-                    width: '45%',
-
-
-                  }}
-                  dropdownStyle={{
-                    borderTopColor: 'white',
-                    borderWidth: 1,
-                    height: 200, // Set a fixed height for the dropdown list
-                    borderColor: 'gray',
-                    width: '40%',
-                    marginTop: 10,
-                    backgroundColor: 'white'
-                  }}
-                  dropdownTextStyle={{
-                    fontSize: 14, // Adjust the font size for better visibility
-                    marginLeft: 6,
-                    color: 'black',
-                    marginTop: 5,
-                    borderTopColor: 'white'
-                  }}
-                  onSelect={(_index: any, value: React.SetStateAction<string>) =>
-                    setSelectedProduct(value)
-                  }
-                  onDropdownWillShow={() => handleDropdownToggle1(true)}
-                  onDropdownWillHide={() => handleDropdownToggle1(false)}
-                  renderSeparator={() => <View style={{ backgroundColor: 'white' }} />}
-                >
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'center', // Center the text vertically
-                      paddingLeft: 10, // Adjust left padding for better alignment
-                      // borderWidth: isDropdownOpen1 ? 1 : 0, // Apply border only when open
-                      // borderColor: 'gray', // Border color when open
-                    }}
+                renderRow={(rowData, rowID, highlighted) => (
+                  <TouchableHighlight
+                    underlayColor="white"
+                    key={rowID}
+                    onPress={() => handleDropdownItemPress(rowData)}
                   >
-                    <Text style={{ fontSize: 14, color: 'black' }}>
-                      {selectedProduct}
-                    </Text>
-                    <Ionicons
-                      name="triangle-outline"
-                      size={16} // Adjust the size for better visibility
-                      color="black"
-                      style={{
-                        transform: [
-                          { rotate: isDropdownOpen1 ? '0deg' : '180deg' },
-                        ],
-                      }}
-                    />
-                  </View>
-                </ModalDropdown>
-              </View>
-              <View style={{ flexDirection: 'row', }}>
-                <Text
-                  style={{
-                    // alignSelf: 'flex-start',
-                    fontSize: 17,
-                    // marginBottom: 15,
-                    alignSelf: 'center'
+                    <View>
+                      <Text style={{ fontSize: 14, color: 'black', marginLeft: 8, marginTop: 5, textAlign: 'right', marginRight: 27 }}>
+                        {rowData}
+                      </Text>
+                    </View>
+                  </TouchableHighlight>
+                )}
+                dropdownStyle={{
+                  borderColor: isDropdownOpen1 ? 'gray' : 'transparent',
+                  borderBottomWidth: 0.5,
+                  borderLeftWidth: 0.5,
+                  borderRightWidth: 0.5,
+                  borderTopWidth: 0,
+                  width: '40.5%',
+                  marginTop: 4
+                }}
 
-                  }}>
-                  Subject :
-                </Text>
-                <TextInput style={{
-                  borderColor: 'red',
-                  borderWidth: 1,
-                  width: '80%',
+                onSelect={(_index: any, value: React.SetStateAction<string>) =>
+                  setSelectedProduct(value)
+                }
+
+                onDropdownWillShow={() => handleDropdownToggle1(true)}
+                onDropdownWillHide={() => handleDropdownToggle1(false)}
+                renderSeparator={() => <View style={{ backgroundColor: 'white' }} />}
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center', // Center the text vertically
+                    paddingLeft: 10, // Adjust left padding for better alignment
+                    // borderWidth: isDropdownOpen1 ? 1 : 0, // Apply border only when open
+                    // borderColor: 'gray', // Border color when open
+                  }}
+                >
+                  <Text style={{ fontSize: 14, color: 'black', }}>
+                    {selectedProduct}
+                  </Text>
+                  <Ionicons
+                    name="triangle-outline"
+                    size={16} // Adjust the size for better visibility
+                    color="black"
+                    style={{
+                      transform: [
+                        { rotate: isDropdownOpen1 ? '0deg' : '180deg' },
+                      ],
+                      marginRight: 5,
+
+                    }}
+                  />
+                </View>
+              </ModalDropdown>
+
+
+
+
+
+
+
+
+
+
+
+
+
+            </View>
+
+            <View style={{ flexDirection: 'row', marginLeft: '5%' }}>
+              <Text
+                style={{
+                  fontSize: 17,
+                  alignSelf: 'center'
+                }}>
+                Subject :
+              </Text>
+              <TextInput style={{
+                width: '80%',
+                marginTop: 5,
+                padding: 10,
+                borderRadius: 8,
+              }}
+                value={subject}
+                onChangeText={text => setSubject(text)}
+              />
+            </View>
+            <View style={{ borderBottomWidth: 1, marginLeft: '5%', marginRight: '5%' }} />
+            <View style={{ flexDirection: 'row', marginLeft: '5%' }}>
+              <Text style={{ fontSize: 17, alignSelf: 'center' }}>Message :</Text>
+              <TextInput
+                style={{
+                  width: '77%',
                   marginTop: 5,
                   padding: 10,
                   borderRadius: 8,
                 }}
-                  value={subject}
-                  onChangeText={text => setSubject(text)}
-                />
+                value={message}
+                onChangeText={(text) => setMessage(text)}
+              />
+            </View>
+
+            {/* <TouchableOpacity
+                style={{
+                  // marginTop: '20%',
+                  alignSelf: 'flex-end',
+                  marginRight: 30,
+                }}
+                onPress={pickAttachment}>
+                <Feather name="paperclip" size={20} />
+              </TouchableOpacity> */}
+            {attachment && (
+              <View>
+                <Text>Attachment:</Text>
+                <Text>{attachment.name}</Text>
+                <Text>{attachment.type}</Text>
+                {/* Add more details if needed */}
+                <TouchableOpacity onPress={removeAttachment}>
+                  <Text style={{ color: 'black' }}>Remove Attachment</Text>
+                </TouchableOpacity>
               </View>
-              <View style={{ borderBottomWidth: 1, width: '100%' }} />
-              <View style={{ flexDirection: 'row' }}>
-                <Text style={{ fontSize: 17, alignSelf: 'center'}}>Message :</Text>
-                <TextInput
-                  style={{
-                    borderColor: 'red',
-                    borderWidth: 1,
-                    width: '80%',
-                    marginTop: 5,
-                    padding: 10,
-                    borderRadius: 8,
-                  }}
-                  value={message}
-                  onChangeText={(text) => setMessage(text)}
-                />
-              </View>
-             
+            )}
+            <ScrollView style={{ marginLeft: '5%', marginRight: '5%' }}>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
               <TouchableOpacity
                 style={{
                   // marginTop: '20%',
@@ -603,19 +752,24 @@ const TicketScreen = ({ navigation }: any) => {
                 onPress={pickAttachment}>
                 <Feather name="paperclip" size={20} />
               </TouchableOpacity>
-            </View>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Hello</Text>
+              <Text>Last</Text>
+            </ScrollView>
           </View>
+          {/* </View> */}
+          {/* </ScrollView> */}
         </TouchableWithoutFeedback>
-        {attachment && (
-          <View>
-            <Text>Attachment:</Text>
-            <Text>{attachment.name}</Text>
-            <Text>{attachment.type}</Text>
-            {/* Add more details if needed */}
-          </View>
-        )}
+
       </Modal>
+
+
+
+
+
     </View>
+
   );
 };
 const styles = StyleSheet.create({
@@ -628,6 +782,7 @@ const styles = StyleSheet.create({
     // marginLeft: 10,
     // marginRight: 10,
     marginTop: 15,
+
   },
   tool: {
     flexDirection: 'row',
@@ -754,39 +909,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: '3%',
     height: '100%',
     backgroundColor: '#e7e7e7',
-    
+
   },
-  centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 22,
-    
-  },
+
   modalView: {
-    borderColor:'red',
-    borderWidth:1,
-    margin: 20,
+    borderColor: 'grey',
+    borderWidth: 1,
+    marginTop: '12%',
     width: '100%',
-    height: '88%',
+    height: '94%',
     backgroundColor: 'white',
     borderRadius: 20,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
-    // marginBottom:30,
-    // padding: 20,
-    paddingTop: 15,
-    paddingLeft: 20,
-    paddingRight: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
+
+    shadowColor: 'black',
     shadowOffset: {
-      width: 0,
+      width: 10,
       height: 2,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    // elevation: 5,
+    shadowOpacity: 10,
+    shadowRadius: 50,
+    elevation: 10,
   },
   card: {
     position: 'absolute',
@@ -804,6 +948,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     justifyContent: 'space-between',
     marginTop: 10,
+
   },
   allproductsView: {
     flexDirection: 'row',
@@ -819,3 +964,4 @@ const styles = StyleSheet.create({
 });
 
 export default TicketScreen;
+
